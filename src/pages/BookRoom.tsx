@@ -62,6 +62,21 @@ export default function BookRoom() {
     );
   };
 
+  const isPastDate = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  };
+
+  const isDateDisabled = (date: Date) => {
+    return isPastDate(date) || isWeekend(date) || isDateBooked(date);
+  };
+
   // Paso 1 — Seleccionar fechas
   const handleReserve = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +87,6 @@ export default function BookRoom() {
       return;
     }
 
-    // Si no está logueado, abrir modal de login
     if (!userLoggedIn) {
       setLoginModal(true);
       return;
@@ -102,7 +116,15 @@ export default function BookRoom() {
       }
 
       const paymentInfo: any = {};
+
+      // 🔥 VALIDACIÓN DE TARJETA — Mínimo y máximo 12 dígitos
       if (method === "CARD") {
+        if (!/^[0-9]{12}$/.test(cardNumber)) {
+          setError("El número de tarjeta debe tener exactamente 12 dígitos numéricos.");
+          setLoading(false);
+          return;
+        }
+
         paymentInfo.cardHolder = cardHolder;
         paymentInfo.cardNumber = cardNumber;
       } else if (method === "PAYPAL") {
@@ -134,15 +156,22 @@ export default function BookRoom() {
     }
   };
 
-  // 🔹 Cuando se cierre el modal tras login exitoso
   const handleLoginSuccess = () => {
     setLoginModal(false);
-    setShowPayment(true); // mostrar paso de pago
+    setShowPayment(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
       <div className="bg-white shadow-lg rounded-lg p-6 w-full max-w-lg">
+        {/* Botón de regreso */}
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-4 flex items-center text-blue-600 hover:text-blue-800 font-medium transition"
+        >
+          ← Regresar
+        </button>
+
         <h2 className="text-2xl font-bold mb-4 text-blue-700">
           Reservar habitación #{id}
         </h2>
@@ -155,17 +184,30 @@ export default function BookRoom() {
               selectRange
               value={dates}
               onChange={(value) => setDates(value as [Date, Date])}
-              tileDisabled={({ date }) => isDateBooked(date)}
-              tileClassName={({ date }) =>
-                isDateBooked(date)
-                  ? "bg-red-400 text-white rounded-md"
-                  : undefined
-              }
+              tileDisabled={({ date }) => isDateDisabled(date)}
+              tileClassName={({ date }) => {
+                if (isPastDate(date)) return "text-gray-300 cursor-not-allowed";
+                if (isWeekend(date))
+                  return "bg-yellow-100 text-gray-500 cursor-not-allowed";
+                if (isDateBooked(date))
+                  return "bg-red-400 text-white rounded-md";
+                return undefined;
+              }}
             />
 
-            <div className="text-sm text-gray-600 mt-2 flex items-center">
-              <span className="bg-red-400 w-4 h-4 inline-block rounded mr-2"></span>
-              Fechas ocupadas
+            <div className="text-sm text-gray-600 mt-3 space-y-1">
+              <div className="flex items-center">
+                <span className="bg-red-400 w-4 h-4 inline-block rounded mr-2"></span>
+                Fechas ocupadas
+              </div>
+              <div className="flex items-center">
+                <span className="bg-yellow-100 w-4 h-4 inline-block rounded mr-2 border border-yellow-300"></span>
+                Fines de semana (no disponibles)
+              </div>
+              <div className="flex items-center">
+                <span className="bg-gray-200 w-4 h-4 inline-block rounded mr-2"></span>
+                Fechas pasadas
+              </div>
             </div>
 
             <form onSubmit={handleReserve} className="mt-6">
@@ -182,6 +224,7 @@ export default function BookRoom() {
             <h3 className="text-lg font-semibold mb-3 text-gray-700">
               Método de pago
             </h3>
+
             <select
               value={method}
               onChange={(e) =>
@@ -197,6 +240,7 @@ export default function BookRoom() {
               <option value="CULQI">💸 Culqi</option>
             </select>
 
+            {/* 🔥 Campos para tarjeta con validación de 12 dígitos */}
             {method === "CARD" && (
               <>
                 <label className="block mb-2">Nombre del titular</label>
@@ -208,14 +252,18 @@ export default function BookRoom() {
                   placeholder="Ej: Juan Pérez"
                   required
                 />
-                <label className="block mb-2">Número de tarjeta</label>
+
+                <label className="block mb-2">Número de tarjeta (12 dígitos)</label>
                 <input
                   type="text"
                   value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
+                  onChange={(e) => {
+                    const onlyNums = e.target.value.replace(/\D+/g, "");
+                    if (onlyNums.length <= 12) setCardNumber(onlyNums);
+                  }}
                   className="border rounded w-full p-2 mb-4"
-                  placeholder="**** **** **** 1234"
-                  maxLength={16}
+                  placeholder="************"
+                  maxLength={12}
                   required
                 />
               </>

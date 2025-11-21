@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
+import ChatAssistant from './ChatAssistant';
 
 export default function AppLayout() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function AppLayout() {
         </div>
       </nav>
       <Outlet />
+      <ChatAssistant />
     </div>
   );
 }

@@ -109,6 +109,7 @@ export default function HotelDetail() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
+      <button onClick={() => navigate(-1)} className="mb-4 text-blue-600 hover:underline">← Volver</button>
       <h1 className="text-3xl font-bold text-blue-700">{hotel.name}</h1>
       <p className="text-gray-600">
         {hotel.city}, {hotel.country}
@@ -208,9 +209,8 @@ export default function HotelDetail() {
                 ${room.price} / noche
               </p>
               <p
-                className={`text-sm mt-1 ${
-                  room.available ? "text-green-600" : "text-red-500"
-                }`}
+                className={`text-sm mt-1 ${room.available ? "text-green-600" : "text-red-500"
+                  }`}
               >
                 {room.available ? "Disponible" : "Ocupada"}
               </p>
