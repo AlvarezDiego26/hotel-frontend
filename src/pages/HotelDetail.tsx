@@ -53,16 +53,14 @@ export default function HotelDetail() {
     availableOnly: false,
   });
 
-  // URL DEL BACKEND PARA PRODUCCIÓN
-  const API_URL = import.meta.env.VITE_API_URL || "https://reservationsystem-wine.vercel.app";
+  const API_URL =
+    import.meta.env.VITE_API_URL || "https://reservationsystem-wine.vercel.app";
 
-  // ================================
-  // Cargar datos del hotel
-  // ================================
+  // === CARGAR HOTEL ===
   useEffect(() => {
     const fetchHotel = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/hotels/${id}`);
+        const res = await fetch(`${API_URL}/hotels/${id}`);
         const data = await res.json();
         setHotel(data);
         setFilteredRooms(data.rooms);
@@ -74,9 +72,7 @@ export default function HotelDetail() {
     fetchHotel();
   }, [id]);
 
-  // ================================
-  // Filtros
-  // ================================
+  // === FILTROS ===
   useEffect(() => {
     if (!hotel) return;
 
@@ -97,9 +93,7 @@ export default function HotelDetail() {
     setFilteredRooms(filtered);
   }, [filters, hotel]);
 
-  // ================================
-  // Cargar disponibilidad
-  // ================================
+  // === DISPONIBILIDAD ===
   useEffect(() => {
     const loadAvailability = async () => {
       if (!hotel) return;
@@ -119,15 +113,14 @@ export default function HotelDetail() {
     loadAvailability();
   }, [hotel?.id]);
 
-  // ================================
-  // Reservar → va al calendario
-  // ================================
   const handleReserve = (roomId: number) => {
     navigate(`/rooms/${roomId}/book`);
   };
 
   if (!hotel)
-    return <p className="text-center text-gray-500">Cargando hotel...</p>;
+    return (
+      <p className="text-center text-gray-500">Cargando hotel...</p>
+    );
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -139,10 +132,11 @@ export default function HotelDetail() {
       </button>
 
       <h1 className="text-3xl font-bold text-blue-700">{hotel.name}</h1>
-      <p className="text-gray-600">{hotel.city}, {hotel.country}</p>
+      <p className="text-gray-600">
+        {hotel.city}, {hotel.country}
+      </p>
       <p className="mt-2 text-gray-700">{hotel.description}</p>
 
-      {/* MAPA */}
       {hotel.latitude && hotel.longitude ? (
         <MapContainer
           center={[hotel.latitude, hotel.longitude]}
@@ -156,13 +150,16 @@ export default function HotelDetail() {
           </Marker>
         </MapContainer>
       ) : (
-        <p className="text-gray-500 my-4">Ubicación no disponible</p>
+        <p className="text-gray-500 my-4">
+          Ubicación no disponible
+        </p>
       )}
 
-      {/* FILTROS */}
       <div className="bg-white shadow rounded-lg p-4 mb-6 flex flex-wrap items-center gap-4">
         <div>
-          <label className="text-sm font-semibold block mb-1">Tipo</label>
+          <label className="text-sm font-semibold block mb-1">
+            Tipo
+          </label>
           <select
             className="border rounded p-2"
             value={filters.type}
@@ -179,25 +176,35 @@ export default function HotelDetail() {
         </div>
 
         <div>
-          <label className="text-sm font-semibold block mb-1">Min</label>
+          <label className="text-sm font-semibold block mb-1">
+            Min
+          </label>
           <input
             type="number"
             className="border rounded p-2 w-24"
             value={filters.minPrice}
             onChange={(e) =>
-              setFilters({ ...filters, minPrice: Number(e.target.value) })
+              setFilters({
+                ...filters,
+                minPrice: Number(e.target.value),
+              })
             }
           />
         </div>
 
         <div>
-          <label className="text-sm font-semibold block mb-1">Max</label>
+          <label className="text-sm font-semibold block mb-1">
+            Max
+          </label>
           <input
             type="number"
             className="border rounded p-2 w-24"
             value={filters.maxPrice}
             onChange={(e) =>
-              setFilters({ ...filters, maxPrice: Number(e.target.value) })
+              setFilters({
+                ...filters,
+                maxPrice: Number(e.target.value),
+              })
             }
           />
         </div>
@@ -207,15 +214,20 @@ export default function HotelDetail() {
             type="checkbox"
             checked={filters.availableOnly}
             onChange={(e) =>
-              setFilters({ ...filters, availableOnly: e.target.checked })
+              setFilters({
+                ...filters,
+                availableOnly: e.target.checked,
+              })
             }
           />
           <label className="text-sm">Solo disponibles</label>
         </div>
       </div>
 
-      {/* HABITACIONES */}
-      <h2 className="text-xl font-semibold mb-4">Habitaciones</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Habitaciones
+      </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredRooms.length > 0 ? (
           filteredRooms.map((room) => (
@@ -224,7 +236,9 @@ export default function HotelDetail() {
               className="border rounded-lg p-4 shadow bg-white hover:shadow-md transition"
             >
               <h3 className="text-lg font-semibold">{room.name}</h3>
-              <p className="text-sm text-gray-600">Tipo: {room.type}</p>
+              <p className="text-sm text-gray-600">
+                Tipo: {room.type}
+              </p>
               <p className="text-sm text-gray-600">
                 Capacidad: {room.capacity} personas
               </p>
@@ -233,7 +247,9 @@ export default function HotelDetail() {
               </p>
               <p
                 className={`text-sm mt-1 ${
-                  room.available ? "text-green-600" : "text-red-500"
+                  room.available
+                    ? "text-green-600"
+                    : "text-red-500"
                 }`}
               >
                 {room.available ? "Disponible" : "Ocupada"}
@@ -250,11 +266,12 @@ export default function HotelDetail() {
             </div>
           ))
         ) : (
-          <p className="text-gray-500">No hay habitaciones disponibles con esos filtros.</p>
+          <p className="text-gray-500">
+            No hay habitaciones disponibles con esos filtros.
+          </p>
         )}
       </div>
 
-      {/* MODAL LOGIN */}
       <Modal
         open={loginModal}
         onClose={() => setLoginModal(false)}
