@@ -7,7 +7,6 @@ import { fetchRoomAvailability } from "../api";
 import Modal from "../components/Modal";
 import Login from "./Login";
 
-// Corregir icono de Leaflet
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -42,45 +41,65 @@ type Hotel = {
 export default function HotelDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
+  const [loginModal, setLoginModal] = useState(false);
+
   const [filters, setFilters] = useState({
     type: "ALL",
     minPrice: 0,
     maxPrice: 9999,
     availableOnly: false,
   });
-  const [loginModal, setLoginModal] = useState(false);
 
+  // URL DEL BACKEND PARA PRODUCCIÓN
+  const API_URL = import.meta.env.VITE_API_URL || "https://reservationsystem-wine.vercel.app";
+
+  // ================================
   // Cargar datos del hotel
+  // ================================
   useEffect(() => {
     const fetchHotel = async () => {
-      const res = await fetch(`http://localhost:3000/api/hotels/${id}`);
-      const data = await res.json();
-      setHotel(data);
-      setFilteredRooms(data.rooms);
+      try {
+        const res = await fetch(`${API_URL}/api/hotels/${id}`);
+        const data = await res.json();
+        setHotel(data);
+        setFilteredRooms(data.rooms);
+      } catch (error) {
+        console.error("Error cargando hotel:", error);
+      }
     };
+
     fetchHotel();
   }, [id]);
 
-  // Aplicar filtros
+  // ================================
+  // Filtros
+  // ================================
   useEffect(() => {
     if (!hotel) return;
+
     let filtered = hotel.rooms;
 
-    if (filters.type !== "ALL")
+    if (filters.type !== "ALL") {
       filtered = filtered.filter((r) => r.type === filters.type);
+    }
 
     filtered = filtered.filter(
       (r) => r.price >= filters.minPrice && r.price <= filters.maxPrice
     );
 
-    if (filters.availableOnly) filtered = filtered.filter((r) => r.available);
+    if (filters.availableOnly) {
+      filtered = filtered.filter((r) => r.available);
+    }
 
     setFilteredRooms(filtered);
   }, [filters, hotel]);
 
-  // Cargar disponibilidad por habitación
+  // ================================
+  // Cargar disponibilidad
+  // ================================
   useEffect(() => {
     const loadAvailability = async () => {
       if (!hotel) return;
@@ -88,18 +107,21 @@ export default function HotelDetail() {
       const updatedRooms = await Promise.all(
         hotel.rooms.map(async (room) => {
           const unavailable = await fetchRoomAvailability(room.id);
-          return { ...room, unavailableDates: unavailable };
+          return { ...room, unavailableDates: unavailable || [] };
         })
       );
 
-      setHotel((prev) => (prev ? { ...prev, rooms: updatedRooms } : prev));
-      setFilteredRooms(updatedRooms);
+      setHotel((prev) =>
+        prev ? { ...prev, rooms: updatedRooms } : prev
+      );
     };
 
     loadAvailability();
-  }, [hotel?.rooms]);
+  }, [hotel?.id]);
 
-  // 🔹 Al hacer clic en "Reservar" — SIEMPRE lleva al calendario
+  // ================================
+  // Reservar → va al calendario
+  // ================================
   const handleReserve = (roomId: number) => {
     navigate(`/rooms/${roomId}/book`);
   };
@@ -109,13 +131,18 @@ export default function HotelDetail() {
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <button onClick={() => navigate(-1)} className="mb-4 text-blue-600 hover:underline">← Volver</button>
+      <button
+        onClick={() => navigate(-1)}
+        className="mb-4 text-blue-600 hover:underline"
+      >
+        ← Volver
+      </button>
+
       <h1 className="text-3xl font-bold text-blue-700">{hotel.name}</h1>
-      <p className="text-gray-600">
-        {hotel.city}, {hotel.country}
-      </p>
+      <p className="text-gray-600">{hotel.city}, {hotel.country}</p>
       <p className="mt-2 text-gray-700">{hotel.description}</p>
 
+      {/* MAPA */}
       {hotel.latitude && hotel.longitude ? (
         <MapContainer
           center={[hotel.latitude, hotel.longitude]}
@@ -132,16 +159,16 @@ export default function HotelDetail() {
         <p className="text-gray-500 my-4">Ubicación no disponible</p>
       )}
 
-      {/* Filtros */}
+      {/* FILTROS */}
       <div className="bg-white shadow rounded-lg p-4 mb-6 flex flex-wrap items-center gap-4">
         <div>
-          <label className="text-sm font-semibold block mb-1">
-            Tipo de habitación
-          </label>
+          <label className="text-sm font-semibold block mb-1">Tipo</label>
           <select
             className="border rounded p-2"
             value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, type: e.target.value })
+            }
           >
             <option value="ALL">Todas</option>
             <option value="SINGLE">Single</option>
@@ -152,9 +179,7 @@ export default function HotelDetail() {
         </div>
 
         <div>
-          <label className="text-sm font-semibold block mb-1">
-            Precio mínimo
-          </label>
+          <label className="text-sm font-semibold block mb-1">Min</label>
           <input
             type="number"
             className="border rounded p-2 w-24"
@@ -166,9 +191,7 @@ export default function HotelDetail() {
         </div>
 
         <div>
-          <label className="text-sm font-semibold block mb-1">
-            Precio máximo
-          </label>
+          <label className="text-sm font-semibold block mb-1">Max</label>
           <input
             type="number"
             className="border rounded p-2 w-24"
@@ -191,14 +214,14 @@ export default function HotelDetail() {
         </div>
       </div>
 
-      {/* Habitaciones */}
+      {/* HABITACIONES */}
       <h2 className="text-xl font-semibold mb-4">Habitaciones</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filteredRooms.length > 0 ? (
           filteredRooms.map((room) => (
             <div
               key={room.id}
-              className="border rounded-lg p-4 shadow hover:shadow-md transition bg-white"
+              className="border rounded-lg p-4 shadow bg-white hover:shadow-md transition"
             >
               <h3 className="text-lg font-semibold">{room.name}</h3>
               <p className="text-sm text-gray-600">Tipo: {room.type}</p>
@@ -209,11 +232,13 @@ export default function HotelDetail() {
                 ${room.price} / noche
               </p>
               <p
-                className={`text-sm mt-1 ${room.available ? "text-green-600" : "text-red-500"
-                  }`}
+                className={`text-sm mt-1 ${
+                  room.available ? "text-green-600" : "text-red-500"
+                }`}
               >
                 {room.available ? "Disponible" : "Ocupada"}
               </p>
+
               {room.available && (
                 <button
                   onClick={() => handleReserve(room.id)}
@@ -225,13 +250,11 @@ export default function HotelDetail() {
             </div>
           ))
         ) : (
-          <p className="text-gray-500">
-            No hay habitaciones que coincidan con los filtros.
-          </p>
+          <p className="text-gray-500">No hay habitaciones disponibles con esos filtros.</p>
         )}
       </div>
 
-      {/* Modal de login */}
+      {/* MODAL LOGIN */}
       <Modal
         open={loginModal}
         onClose={() => setLoginModal(false)}
