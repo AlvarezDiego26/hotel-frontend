@@ -23,16 +23,26 @@ export default function ChatAssistant() {
      * --------------------------- */
     const askAI = async (question: string): Promise<string> => {
         try {
-            const API_URL = import.meta.env.VITE_API_URL || "";
+            const API_URL = import.meta.env.VITE_API_URL;
+
+            if (!API_URL) {
+                return "❌ Error: VITE_API_URL no está configurado.";
+            }
 
             const res = await fetch(`${API_URL}/api/ia/ask`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify({ question }),
             });
 
+            if (!res.ok) {
+                return `❌ Error del servidor (${res.status})`;
+            }
+
             const data = await res.json();
-            return data.answer || "No pude procesar tu solicitud, intenta nuevamente.";
+            return data.answer || "No pude procesar tu solicitud.";
         } catch (err) {
             return "❌ Error al conectar con el servidor de IA.";
         }
@@ -50,23 +60,26 @@ export default function ChatAssistant() {
             text: messageText,
             isBot: false,
         };
+
         setMessages((prev) => [...prev, userMessage]);
         setInputText("");
 
+        const loadingId = Date.now() + 1;
+
         const loadingMessage: Message = {
-            id: Date.now() + 1,
+            id: loadingId,
             text: "Escribiendo...",
             isBot: true,
         };
+
         setMessages((prev) => [...prev, loadingMessage]);
 
         const aiResponse = await askAI(messageText);
 
+        // Sustituir mensaje "Escribiendo..." por la respuesta real
         setMessages((prev) =>
             prev.map((msg) =>
-                msg.id === loadingMessage.id
-                    ? { ...msg, text: aiResponse }
-                    : msg
+                msg.id === loadingId ? { ...msg, text: aiResponse } : msg
             )
         );
     };
