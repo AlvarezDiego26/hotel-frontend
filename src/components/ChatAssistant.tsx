@@ -29,7 +29,7 @@ export default function ChatAssistant() {
                 return "❌ Error: VITE_API_URL no está configurado.";
             }
 
-            const res = await fetch(`${API_URL}/api/ia/ask`, {
+            const res = await fetch(`${API_URL}/ia/ask`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
