@@ -19,7 +19,7 @@ export default function ChatAssistant() {
     const [inputText, setInputText] = useState("");
 
     /** --------------------------
-     *  🔥 Llamada a tu API real
+     *  🔥 Llamar a tu API REAL
      * --------------------------- */
     const askAI = async (question: string): Promise<string> => {
         try {
@@ -29,8 +29,8 @@ export default function ChatAssistant() {
                 return "❌ Error: VITE_API_URL no está configurado.";
             }
 
-            // 👈🔥 RUTA CORRECTA
-            const res = await fetch(`${API_URL}/api/ia/ask`, {
+            // 👈🔥 CORRECCIÓN: evitar /api/api
+            const res = await fetch(`${API_URL}/ia/ask`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -77,7 +77,6 @@ export default function ChatAssistant() {
 
         const aiResponse = await askAI(messageText);
 
-        // Sustituir mensaje "Escribiendo..." por la respuesta real
         setMessages((prev) =>
             prev.map((msg) =>
                 msg.id === loadingId ? { ...msg, text: aiResponse } : msg
